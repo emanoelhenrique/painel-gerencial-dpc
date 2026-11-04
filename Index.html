@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <style>
+    body { background: #12141d; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; overflow: hidden; }
+    .sidebar { width: 300px; background: #1c1f2e; height: 100vh; padding: 15px; border-right: 2px solid #3a86ff; box-sizing: border-box; position: fixed; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+    .main { margin-left: 300px; flex: 1; padding: 20px; height: 100vh; overflow-y: auto; position: relative; }
+   
+    .main-header { text-align: center; margin-bottom: 15px; position: relative; }
+    .main-header h1 {
+      color: #ffffff; margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .tabs-container { text-align: center; margin-bottom: 25px; padding-bottom: 15px; position: relative; }
+    .tabs-container::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 2px; background: linear-gradient(90deg, transparent, #3a86ff, transparent); }
+    .tab-btn { background: #1c1f2e; color: #888; border: 2px solid #2d324d; padding: 10px 30px; margin: 0 10px; font-weight: bold; border-radius: 30px; cursor: pointer; transition: 0.3s; width: auto; display: inline-block; font-size: 14px; }
+    .tab-btn:hover { border-color: #3a86ff; color: #fff; }
+    .tab-btn.active { background: #3a86ff; color: white; border-color: #3a86ff; box-shadow: 0 4px 10px rgba(58,134,255,0.4); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ASSINATURA DO DESENVOLVEDOR */
+    .developer-signature { text-align: center; font-size: 13px; color: #888; margin-top: -10px; margin-bottom: 25px; letter-spacing: 0.5px; }
+    .developer-signature strong { color: #ffffff; font-weight: 900; }
+
+    table { width: 100%; border-collapse: separate; border-spacing: 0 5px; margin-bottom: 25px; }
+    th { background: #3a86ff; color: white; padding: 12px; font-size: 11px; text-transform: uppercase; border: none; }
+    th:first-child { border-radius: 8px 0 0 0; } th:last-child { border-radius: 0 8px 0 0; }
+    td { padding: 10px; background: #252a3d; border: none; text-align: center; font-size: 13px; }
+    .status-iniciado { color: #ffd600; font-weight: bold; }
+    .status-pendente { color: #ff4d4d; font-weight: bold; }
+    .grid-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;}
+    .card-chart { background: #1c1f2e; padding: 15px; border-radius: 8px; border: 1px solid #2d324d; height: 260px; position: relative;}
+    .title-chart { font-size: 13px; font-weight: bold; color: #3a86ff; margin-bottom: 10px; text-align: center; text-transform: uppercase; }
+    .section-title { border-left: 4px solid #3a86ff; padding-left:10px; margin: 20px 0 10px 0; text-transform: uppercase; font-size: 16px; font-weight: bold; }
+    .gauge-container { width: 100%; display: block; text-align: center; margin-top: 10px; flex-shrink: 0; }
+    .gauge-wrapper { width: 250px; height: 140px; position: relative; margin: 0 auto; }
+    .gauge-content-inner { position: absolute; bottom: 5px; display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
+    .gauge-inner-title { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+
+    textarea { width: 100%; height: 180px; background: #0f111a; color: #00ff88; border: 1px solid #3a86ff; padding: 10px; box-sizing: border-box; margin-bottom: 10px; border-radius: 4px; font-family: inherit; resize: none; flex-shrink: 0; }
+    button { width: 100%; padding: 12px; background: #3a86ff; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; margin-bottom: 10px; flex-shrink: 0; }
+    .filter-box { width: 100%; background: #0f111a; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #2d324d; }
+    select, input[type="date"] { width: 100%; background: #1c1f2e; border: 1px solid #3a86ff; color: white; padding: 6px; border-radius: 4px; box-sizing: border-box; margin-bottom: 5px; cursor: pointer; }
+    .form-card { background: #0f111a; border: 1px solid #3a86ff; border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: center; }
+    .form-title { color: #3a86ff; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+    .form-value { color: #ffffff; font-size: 28px; font-weight: 900; }
+    
+    /* ESTILOS DOS NOVOS FILTROS DO DASHBOARD */
+    .dash-filter-container { display: flex; justify-content: center; margin-bottom: 20px; align-items: center; background: #1c1f2e; border: 1px solid #3a86ff; padding: 15px; border-radius: 8px;}
+    .dash-filter-container label { color:#3a86ff; font-weight:bold; margin-right: 8px; text-transform: uppercase; font-size: 11px;}
+    .dash-filter-container input[type="date"] { width: 140px; margin-right: 25px; margin-bottom: 0; font-size: 13px; font-weight: bold;}
+    
+    .custom-multiselect { position: relative; display: inline-block; width: 260px; text-align: left; }
+    .multiselect-btn { background: #1c1f2e; border: 1px solid #3a86ff; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .multiselect-content { display: none; position: absolute; background-color: #1c1f2e; min-width: 100%; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5); z-index: 10; border: 1px solid #3a86ff; border-radius: 4px; max-height: 250px; overflow-y: auto; margin-top: 2px;}
+    .multiselect-content.show { display: block; }
+    .chk-lbl { display: block; padding: 10px 12px; cursor: pointer; font-size: 13px; color: #fff; border-bottom: 1px solid #2d324d; }
+    .chk-lbl:hover { background-color: #2d324d; color: #3a86ff; }
+    .chk-lbl input { margin-right: 10px; cursor: pointer; transform: scale(1.2); }
+    .chk-lbl:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <h3 style="color:#3a86ff; font-size: 16px; margin: 0 0 15px 0; text-align: center;">PASSAGEM DE TURNO</h3>
+  <div class="form-card"><div class="form-title">Formulário Atual</div><div class="form-value" id="formAtual">...</div></div>
+  <div class="filter-box">
+    <label style="font-size:10px; color:#3a86ff; font-weight:bold;">DATA:</label>
+    <input type="date" id="fData" onchange="atualizar()">
+    <label style="font-size:10px; color:#3a86ff; font-weight:bold;">TURNO ATUAL:</label>
+    <select id="fTurno" onchange="trocarTurnoTabela()">
+      <option value="1º turno">1º Turno</option>
+      <option value="2º turno" selected>2º Turno</option>
+      <option value="adm">ADM</option>
+    </select>
+  </div>
+  <textarea id="txt" placeholder="Descreva as atividades aqui..."></textarea>
+  <button onclick="gerarEmail()">GERAR E-MAIL</button>
+  <div class="gauge-container">
+    <div class="gauge-wrapper">
+      <canvas id="gaugeOperacional"></canvas>
+      <div class="gauge-content-inner">
+        <div class="gauge-inner-title" style="margin-bottom: -5px;">ACUMULADO DPC</div>
+        <div style="font-size: 38px; font-weight: 900; color:#fff;" id="qtd">0</div>
+      </div>
+    </div>
+    <div id="perc" style="font-size: 18px; color: #ff4d4d; font-weight: bold; margin-top: 5px;">0.00%</div>
+  </div>
+  <hr style="border: 0; border-top: 1px solid #2d324d; margin: 20px 0;">
+  <div class="gauge-container">
+    <div class="gauge-wrapper">
+      <canvas id="gaugeRecebimento"></canvas>
+      <div class="gauge-content-inner">
+        <div class="gauge-inner-title" style="line-height: 1.1; margin-bottom: 2px;">ACUMULADO<br>RECEBIMENTO</div>
+        <div style="font-size: 38px; font-weight: 900; color:#fff;" id="qtdRec">0</div>
+      </div>
+    </div>
+    <div id="percRec" style="font-size: 18px; color: #ff4d4d; font-weight: bold; margin-top: 5px;">0.00%</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="main-header">
+    <h1>PAINEL DPC REG</h1>
+  </div>
+  
+  <div class="tabs-container">
+    <button class="tab-btn active" onclick="switchTab('tab-passagem', this)">PASSAGEM DE TURNO</button>
+    <button class="tab-btn" onclick="switchTab('tab-dashboard', this)">DASHBOARD INTELIGENTE</button>
+  </div>
+
+  <div class="developer-signature">Foi desenvolvido por: <strong>Emanoel Antunes</strong></div>
+
+  <!-- ABA 1: PASSAGEM DE TURNO -->
+  <div id="tab-passagem" class="tab-content active">
+    <div class="section-title">PALETES PENDENTE TRIAGEM</div>
+    <table id="tabSaldo"><thead><tr><th>Nº PALETE</th><th>PROCESSO</th><th>SALDO</th><th>STATUS</th><th>SLA</th></tr></thead><tbody id="corpoSaldo"></tbody></table>
+    
+    <div class="section-title" id="tituloTurno">RESUMO DO TURNO</div>
+    <table id="tabTurno"><thead><tr><th>PROCESSO</th><th>ENTRADA</th><th>SAÍDA</th><th>QTD PEÇAS</th></tr></thead><tbody id="corpoTurno"></tbody></table>
+    
+    <div class="section-title" id="tituloRAS">RELATÓRIO SEMANAL</div>
+    <table style="width: 50%;"><thead><tr><th>PROCESSO</th><th>PALLETS</th><th>PEÇAS</th></tr></thead><tbody id="cRAS"></tbody><tfoot id="fRAS"></tfoot></table>
+  </div>
+
+  <!-- ABA 2: DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content">
+    
+    <!-- NOVOS FILTROS DINÂMICOS -->
+    <div class="dash-filter-container">
+      <label>DATA INÍCIO:</label>
+      <input type="date" id="dashDataInicio" onchange="renderDashboard()">
+      
+      <label>DATA FIM:</label>
+      <input type="date" id="dashDataFim" onchange="renderDashboard()">
+
+      <label>PROCESSOS:</label>
+      <div class="custom-multiselect">
+        <div class="multiselect-btn" onclick="toggleMulti(event)">
+          <span>Selecionar Processos</span> <span>▼</span>
+        </div>
+        <div class="multiselect-content" id="multiProcessos">
+          <label class="chk-lbl"><input type="checkbox" value="TODOS" checked onchange="handleProcessChange(this)"> <b style="color:#3a86ff;">TODOS OS PROCESSOS</b></label>
+          <!-- Os processos preencherão aqui sozinhos -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid-charts">
+      <div class="card-chart"><div class="title-chart">TRIAGEM POR DIA (PEÇAS)</div><canvas id="cDiaPec"></canvas></div>
+      <div class="card-chart"><div class="title-chart">SAÍDA DE PALETES POR DIA</div><canvas id="cDiaPal"></canvas></div>
+    </div>
+    <div class="grid-charts">
+      <div class="card-chart"><div class="title-chart">SAÍDA DE PEÇAS SEMANAL</div><canvas id="cSemPec"></canvas></div>
+      <div class="card-chart"><div class="title-chart">SAÍDA DE PALETES SEMANAL</div><canvas id="cSemPal"></canvas></div>
+    </div>
+    <div class="grid-charts">
+      <div class="card-chart"><div class="title-chart">SAÍDA DE PEÇAS POR MÊS</div><canvas id="cMesPec"></canvas></div>
+      <div class="card-chart"><div class="title-chart">SAÍDA DE PALETES POR MÊS</div><canvas id="cMesPal"></canvas></div>
+    </div>
+    <div class="grid-charts">
+      <div class="card-chart"><div class="title-chart">ENTRADA X SAÍDA ANO</div><canvas id="cAno"></canvas></div>
+      <div class="card-chart"><div class="title-chart">ACUMULADO POR PROCESSO</div><canvas id="cProc"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+const needlePlugin = { id: 'needle', afterDraw: (chart) => { if (chart.config.options.needleValue === undefined) return; const { ctx, chartArea: { width, height } } = chart; const angle = Math.PI + (chart.config.options.needleValue / 100) * Math.PI; const cx = width / 2; const cy = chart.getDatasetMeta(0).data[0].y; ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(height - 10, 0); ctx.lineTo(0, 3); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill(); ctx.restore(); } };
+Chart.register(needlePlugin);
+
+let charts = {}; let ultimaRes = null;
+
+// =====================================
+// LÓGICA DO FILTRO MULTI-SELEÇÃO
+// =====================================
+function toggleMulti(e) {
+  e.stopPropagation();
+  document.getElementById("multiProcessos").classList.toggle("show");
+}
+
+window.onclick = function(event) {
+  if (!event.target.closest('.custom-multiselect')) {
+    let dropdowns = document.getElementsByClassName("multiselect-content");
+    for (let i = 0; i < dropdowns.length; i++) {
+      if (dropdowns[i].classList.contains('show')) dropdowns[i].classList.remove('show');
+    }
+  }
+}
+
+function handleProcessChange(chk) {
+  let checkboxes = document.querySelectorAll('#multiProcessos input[type="checkbox"]');
+  if(chk.value === "TODOS" && chk.checked) {
+    // Se marcou "TODOS", desmarca o resto
+    checkboxes.forEach(c => { if(c.value !== "TODOS") c.checked = false; });
+  } else if(chk.checked) {
+    // Se marcou um específico, desmarca "TODOS"
+    checkboxes[0].checked = false; 
+  }
+  
+  // Se desmarcar tudo sem querer, volta pro TODOS sozinho
+  let anyChecked = Array.from(checkboxes).some(c => c.checked);
+  if(!anyChecked) checkboxes[0].checked = true;
+  
+  renderDashboard();
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+  if (tabId === 'tab-dashboard') renderDashboard(); 
+}
+
+function atualizar() {
+  google.script.run
+    .withFailureHandler(function(err) { alert("⚠️ O GOOGLE BLOQUEOU OS DADOS NO SERVIDOR:\n\n" + err.message); })
+    .withSuccessHandler(exibir)
+    .getDadosMonitor(document.getElementById('fData').value);
+    
+  google.script.run
+    .withSuccessHandler((num) => { document.getElementById('formAtual').innerText = num; })
+    .getFormAtual();
+}
+
+function trocarTurnoTabela() { if(ultimaRes) exibir(ultimaRes); }
+
+function exibir(res) {
+  try {
+    ultimaRes = res;
+    
+    document.getElementById('qtd').innerText = res.qtdPaletes;
+    document.getElementById('perc').innerText = res.ocupacao + "%";
+    document.getElementById('qtdRec').innerText = res.valorRec;
+    document.getElementById('percRec').innerText = res.ocupacaoRec + "%";
+    
+    let tSel = document.getElementById('fTurno').value;
+    document.getElementById('tituloTurno').innerText = tSel.toUpperCase() + " - " + res.dataAlvo;
+    document.getElementById('tituloRAS').innerText = "RELATÓRIO SEMANAL - " + res.semanaAlvo;
+    
+    let hS = ""; res.estoque.forEach(p => {
+      let cl = p.status === "INICIADO" ? "status-iniciado" : "status-pendente";
+      hS += `<tr><td><b>${p.id}</b></td><td>${p.processos}</td><td style="color:#3a86ff; font-weight:bold;">${p.saldo}</td><td class="${cl}">${p.status}</td><td>${p.sla||'0'}</td></tr>`;
+    });
+    document.getElementById('corpoSaldo').innerHTML = hS;
+    
+    let hT = "", hR = "";
+    let dTurno;
+    if (tSel === "1º turno") { dTurno = res.t1; } else if (tSel === "2º turno") { dTurno = res.t2; } else { dTurno = res.tADM; }
+    
+    res.procsTurno.forEach(p => { hT += `<tr><td style="text-align:left; padding-left:20px;">${p}</td><td>${dTurno[p].e||'0'}</td><td>${dTurno[p].s||'0'}</td><td>${dTurno[p].q||'0'}</td></tr>`; });
+    res.procs.forEach(p => { hR += `<tr><td style="text-align:left; padding-left:20px;">${p}</td><td>${res.ras[p].pal}</td><td>${res.ras[p].pec}</td></tr>`; });
+    
+    document.getElementById('corpoTurno').innerHTML = hT;
+    document.getElementById('cRAS').innerHTML = hR;
+    document.getElementById('fRAS').innerHTML = `<tr style="font-weight:bold;"><td style="background:#3a86ff; color:white; border-radius:0 0 0 8px;">TOTAL</td><td style="background:#252a3d;">${res.totPal}</td><td style="background:#252a3d; border-radius:0 0 8px 0;">${res.totPec}</td></tr>`;
+    
+    // Alimenta as opções de Processos apenas 1 vez para não perder as seleções da pessoa
+    let containerProcessos = document.getElementById('multiProcessos');
+    if(res.dashRaw && res.dashRaw.processosUnicos && containerProcessos.children.length <= 1) {
+      res.dashRaw.processosUnicos.forEach(p => { 
+        containerProcessos.innerHTML += `<label class="chk-lbl"><input type="checkbox" value="${p}" onchange="handleProcessChange(this)"> ${p}</label>`; 
+      });
+    }
+
+    desenharGauges(res);
+    renderDashboard();
+    
+  } catch(erroNoPainel) {
+    alert("⚠️ ERRO AO DESENHAR O PAINEL:\n\n" + erroNoPainel.message);
+  }
+}
+
+function desenharGauges(dados) {
+  if (charts.g) charts.g.destroy();
+  charts.g = new Chart(document.getElementById('gaugeOperacional'), {
+    type:'doughnut',
+    data:{ datasets:[{ data:[15,10,10], backgroundColor:['#00c853','#ffd600','#d50000'], borderWidth:0, circumference:180, rotation:270, cutout:'80%' }] },
+    options:{ needleValue: Math.min(parseFloat(dados.ocupacao), 100), maintainAspectRatio:false, plugins:{datalabels:{display:false}} }
+  });
+  if (charts.gRec) charts.gRec.destroy();
+  charts.gRec = new Chart(document.getElementById('gaugeRecebimento'), {
+    type:'doughnut',
+    data:{ datasets:[{ data:[15,10,10], backgroundColor:['#00c853','#ffd600','#d50000'], borderWidth:0, circumference:180, rotation:270, cutout:'80%' }] },
+    options:{ needleValue: Math.min(parseFloat(dados.ocupacaoRec), 100), maintainAspectRatio:false, plugins:{datalabels:{display:false}} }
+  });
+}
+
+// Funções Matemáticas Atualizadas para a Lógica de Múltipla Escolha
+function somaObj(dicionario, processosSel, chave) {
+  if (!dicionario) return 0;
+  if (processosSel.includes("TODOS")) { return Object.values(dicionario).reduce((acc, val) => acc + (val[chave] || 0), 0); }
+  return processosSel.reduce((acc, p) => acc + ((dicionario[p] && dicionario[p][chave]) ? dicionario[p][chave] : 0), 0);
+}
+
+function somaVal(dicionario, processosSel) {
+  if (!dicionario) return 0;
+  if (processosSel.includes("TODOS")) { return Object.values(dicionario).reduce((acc, val) => acc + val, 0); }
+  return processosSel.reduce((acc, p) => acc + (dicionario[p] || 0), 0);
+}
+
+// Função para gerar o intervalo de datas (Calendário)
+function getDatesInRange(startStr, endStr) {
+  let dateArray = [];
+  let current = new Date(startStr + 'T00:00:00');
+  let end = new Date(endStr + 'T00:00:00');
+  while (current <= end) {
+    let d = String(current.getDate()).padStart(2, '0');
+    let m = String(current.getMonth() + 1).padStart(2, '0');
+    let y = current.getFullYear();
+    dateArray.push(`${d}/${m}/${y}`);
+    current.setDate(current.getDate() + 1);
+  }
+  return dateArray;
+}
+
+function criarGraficoMisto(idCtx, labels, dataArray, colorBar) {
+  if (charts[idCtx]) charts[idCtx].destroy();
+  charts[idCtx] = new Chart(document.getElementById(idCtx), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: 'line', label: 'Tendência', data: [...dataArray], borderColor: '#ffffff', borderWidth: 2.5, fill: false, tension: 0.2, pointBackgroundColor: '#1c1f2e', pointRadius: 4,
+          datalabels: {
+            align: 'top', offset: 5, color: '#fff', padding: 3, font: { size: 10, weight: 'bold' }, borderRadius: 4,
+            formatter: function(val, ctx) {
+              if (ctx.dataIndex === 0) return '';
+              let prev = ctx.dataset.data[ctx.dataIndex - 1];
+              if (!prev || prev === 0) return val > 0 ? '+100%' : '';
+              let diff = ((val - prev) / prev) * 100;
+              if (diff === 0) return '0%';
+              return (diff > 0 ? '+' : '') + Math.round(diff) + '%';
+            },
+            backgroundColor: function(ctx) {
+              if(ctx.dataIndex === 0) return 'transparent';
+              let prev = ctx.dataset.data[ctx.dataIndex - 1];
+              let val = ctx.dataset.data[ctx.dataIndex];
+              if (val === prev) return 'rgba(255,255,255,0.2)';
+              return val > prev ? '#00c853' : '#ff4d4d'; 
+            }
+          }
+        },
+        {
+          type: 'bar', label: 'Valor', data: dataArray, backgroundColor: colorBar,
+          datalabels: { align: 'center', color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (val) => val === 0 ? '' : Math.round(val) }
+        }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30 } }, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#aaa', font: {weight: 'bold'} } } } }
+  });
+}
+
+function renderDashboard() {
+  if (!ultimaRes || !ultimaRes.dashRaw) return;
+  let dr = ultimaRes.dashRaw;
+  
+  // Pegando os Processos Selecionados
+  let checkboxes = document.querySelectorAll('#multiProcessos input[type="checkbox"]:checked');
+  let filtroProc = Array.from(checkboxes).map(c => c.value);
+  if(filtroProc.length === 0) filtroProc = ["TODOS"];
+
+  // Lógica do Calendário (Afeta os Gráficos Diários)
+  let dtIni = document.getElementById('dashDataInicio').value;
+  let dtFim = document.getElementById('dashDataFim').value;
+  let diasBase = dr.u7Full; // Padrão: Últimos 7 dias
+  let labelsDias = ultimaRes.u7L;
+
+  if (dtIni && dtFim) {
+    let d1 = new Date(dtIni + 'T00:00:00');
+    let d2 = new Date(dtFim + 'T00:00:00');
+    if(d1 <= d2) {
+      diasBase = getDatesInRange(dtIni, dtFim);
+      labelsDias = diasBase.map(d => d.substring(0,5)); // Corta o ano para exibir bonitinho: Ex: 23/09
+    }
+  }
+
+  // Gráficos Diários (com Calendário Aplicado)
+  let dDiaPec = diasBase.map(d => somaObj(dr.dbDia[d], filtroProc, 'pec'));
+  let dDiaPal = diasBase.map(d => somaObj(dr.dbDia[d], filtroProc, 'pal'));
+  criarGraficoMisto('cDiaPec', labelsDias, dDiaPec, '#3a86ff'); 
+  criarGraficoMisto('cDiaPal', labelsDias, dDiaPal, '#ff4d4d'); 
+
+  // Gráficos Semanais
+  let dSemPec = ultimaRes.u5SemL.map(s => somaObj(dr.dbSem[s], filtroProc, 'pec'));
+  let dSemPal = ultimaRes.u5SemL.map(s => somaObj(dr.dbSem[s], filtroProc, 'pal'));
+  criarGraficoMisto('cSemPec', ultimaRes.u5SemL, dSemPec, '#3a86ff');
+  criarGraficoMisto('cSemPal', ultimaRes.u5SemL, dSemPal, '#ff4d4d');
+
+  // Gráficos Mensais
+  let limiteM = new Date().getMonth() + 1;
+  let lblsM = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].slice(0, limiteM);
+  let dMesPec = lblsM.map((_, i) => somaVal(dr.dbMesPec[i], filtroProc));
+  let dMesPal = lblsM.map((_, i) => somaVal(dr.dbMesPal[i], filtroProc));
+  criarGraficoMisto('cMesPec', lblsM, dMesPec, '#3a86ff');
+  criarGraficoMisto('cMesPal', lblsM, dMesPal, '#ff4d4d');
+
+  // Gráfico Anual
+  let aEnt = somaVal(dr.dbAnoEnt, filtroProc);
+  let aSai = somaVal(dr.dbAnoSai, filtroProc);
+  if (charts.cAno) charts.cAno.destroy();
+  charts.cAno = new Chart(document.getElementById('cAno'), {
+    type: 'bar',
+    data: { labels: ['ENTRADA', 'SAÍDA'], datasets: [{ data: [aEnt, aSai], backgroundColor: ['#ff4d4d', '#3a86ff'] }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20 } },
+      plugins: { legend: { display: false }, datalabels: { align: 'top', anchor: 'end', color: '#fff', font: { weight: 'bold', size: 14 } } },
+      scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#aaa', font: {weight: 'bold'} } } }
+    }
+  });
+
+  // Gráfico Acumulado por Processo
+  let labelsProc = filtroProc.includes("TODOS") ? dr.processosUnicos : filtroProc;
+  let dataProc = labelsProc.map(p => somaVal(dr.dbProc, [p])); // Array force para reutilizar a mesma função
+  if (charts.cProc) charts.cProc.destroy();
+  charts.cProc = new Chart(document.getElementById('cProc'), {
+    type: 'bar',
+    data: { labels: labelsProc, datasets: [{ data: dataProc, backgroundColor: '#3a86ff' }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, datalabels: { align: 'right', anchor: 'end', color: '#fff', font: { weight: 'bold' } } },
+      scales: { x: { display: false }, y: { grid: { display: false }, ticks: { color: '#fff', font: { size: 10, weight: 'bold' } } } }
+    }
+  });
+}
+
+function gerarEmail() {
+  const btn = event.target; btn.innerText = "ENVIANDO..."; btn.disabled = true;
+  let tSel = document.getElementById('fTurno').value.toLowerCase();
+  let rT = document.getElementById("corpoTurno").rows;
+  let linhasEmail = "";
+  for (let i = 0; i < rT.length; i++) {
+    linhasEmail += `<tr><td style="padding:10px; background:#252a3d; color:#e0e0e0; font-size:13px; border-bottom: 1px solid #1c1f2e;">${rT[i].cells[0].innerText}</td><td style="padding:10px; background:#252a3d; color:#e0e0e0; font-size:13px; text-align: center; border-bottom: 1px solid #1c1f2e;">${rT[i].cells[1].innerText}</td><td style="padding:10px; background:#252a3d; color:#e0e0e0; font-size:13px; text-align: center; border-bottom: 1px solid #1c1f2e;">${rT[i].cells[2].innerText}</td><td style="padding:10px; background:#252a3d; color:#3a86ff; font-size:13px; font-weight:bold; text-align: center; border-bottom: 1px solid #1c1f2e;">${rT[i].cells[3].innerText}</td></tr>`;
+  }
+  let fechamentosFiltrados = "";
+  if (ultimaRes.fechamentosBrutos) {
+    let linhasFechamento = ultimaRes.fechamentosBrutos.split("\n");
+    linhasFechamento.forEach(f => {
+      if (f.includes("|")) {
+        let partes = f.split("|");
+        if (partes[1].trim() === tSel) fechamentosFiltrados += partes[0].trim() + "\n";
+      }
+    });
+  }
+  google.script.run.withSuccessHandler((msg) => { alert(msg); btn.innerText = "GERAR E-MAIL"; btn.disabled = false; }).enviarEmailPassagem({
+    turno: tSel, data: ultimaRes.dataAlvo, texto: document.getElementById('txt').value, fechamentos: fechamentosFiltrados || "Nenhum palete CTR/DEDUTÍVEL fechado neste turno.", linhasTabelaEmail: linhasEmail, ocupacao: ultimaRes.ocupacao, qtdPaletes: ultimaRes.qtdPaletes, formAtual: document.getElementById('formAtual').innerText
+  });
+}
+window.onload = () => { document.getElementById('fData').valueAsDate = new Date(); atualizar(); };
+</script>
+</body>
+</html>
